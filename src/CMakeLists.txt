@@ -21,6 +21,7 @@ target_include_directories(wiivc-injector PRIVATE
 target_link_libraries(wiivc-injector PRIVATE
     CLI11::CLI11
     fmt::fmt
+    spdlog::spdlog
     pugixml::pugixml
     CURL::libcurl
     OpenSSL::SSL

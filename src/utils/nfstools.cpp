@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 #include "wiivc/nfstools.h"
 #include "wiivc/nfsconvert.h"
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 namespace wiivc::nfstools {
 
@@ -53,7 +53,7 @@ namespace wiivc::nfstools {
         auto result = converter.isoToNfs(isoPath, outputDir, key, false, false);
 
         if (verbose && result) {
-            fmt::print("NFS conversion completed: {} -> {}\n",
+            spdlog::info("NFS conversion completed: {} -> {}",
                        isoPath.string(),
                        outputDir.string());
         }
@@ -90,7 +90,7 @@ namespace wiivc::nfstools {
         auto result = converter.nfsToIso(nfsDir, outputIso, key, false);
 
         if (verbose && result) {
-            fmt::print("ISO extraction completed: {} -> {}\n",
+            spdlog::info("ISO extraction completed: {} -> {}",
                        nfsDir.string(),
                        outputIso.string());
         }

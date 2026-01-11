@@ -9,7 +9,7 @@
 #include "wiivc/types.h"
 #include "wiivc/xmlgen.h"
 #include <CLI/CLI.hpp>
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -93,28 +93,28 @@ int main(int argc, char **argv) {
     CLI11_PARSE(app, argc, argv);
 
     if (opts.verbose) {
-        fmt::print("WiiVC Injector starting...\n");
-        fmt::print("Input: {}\n", opts.inputFile.string());
-        fmt::print("Output: {}\n", opts.outputDir.string());
+        spdlog::info("WiiVC Injector starting...");
+        spdlog::info("Input: {}", opts.inputFile.string());
+        spdlog::info("Output: {}", opts.outputDir.string());
     }
 
     // Load game database
     auto dbResult = wiivc::GameDatabase::loadDatabase();
     if (!dbResult) {
-        fmt::print(stderr, "Error: Failed to load game database\n");
+        spdlog::error("Failed to load game database");
         return 1;
     }
 
     // Verify input file exists
     if (!fs::exists(opts.inputFile)) {
-        fmt::print(stderr, "Error: Input file not found: {}\n", opts.inputFile.string());
+        spdlog::error("Input file not found: {}", opts.inputFile.string());
         return 1;
     }
 
     // Detect file type
     auto fileTypeResult = wiivc::FileFormatDetector::detectFileType(opts.inputFile);
     if (!fileTypeResult) {
-        fmt::print(stderr, "Error: Failed to detect file type\n");
+        spdlog::error("Failed to detect file type");
         return 1;
     }
 
@@ -142,37 +142,37 @@ int main(int argc, char **argv) {
             default:
                 break;
         }
-        fmt::print("Detected file type: {}\n", typeStr);
+        spdlog::info("Detected file type: {}", typeStr);
     }
 
     // Read game information
     auto gameIdResult = wiivc::FileFormatDetector::readGameId(opts.inputFile);
     if (gameIdResult && opts.verbose) {
         std::string gameId(gameIdResult->data(), 4);
-        fmt::print("Game ID: {}\n", gameId);
+        spdlog::info("Game ID: {}", gameId);
     }
 
     auto gameNameResult = wiivc::FileFormatDetector::readGameName(opts.inputFile);
     if (gameNameResult && opts.verbose) {
-        fmt::print("Internal name: {}\n", *gameNameResult);
+        spdlog::info("Internal name: {}", *gameNameResult);
     }
 
     // Verify encryption keys if provided
     if (!opts.commonKey.empty()) {
         auto verifyResult = wiivc::crypto::verifyWiiUCommonKey(opts.commonKey);
         if (verifyResult && *verifyResult) {
-            fmt::print("✓ Wii U Common Key verified\n");
+            spdlog::info("✓ Wii U Common Key verified");
         } else {
-            fmt::print(stderr, "✗ Warning: Invalid Wii U Common Key\n");
+            spdlog::warn("✗ Invalid Wii U Common Key");
         }
     }
 
     if (!opts.titleKey.empty()) {
         auto verifyResult = wiivc::crypto::verifyTitleKey(opts.titleKey);
         if (verifyResult && *verifyResult) {
-            fmt::print("✓ Title Key verified\n");
+            spdlog::info("✓ Title Key verified");
         } else {
-            fmt::print(stderr, "✗ Warning: Invalid Title Key\n");
+            spdlog::warn("✗ Invalid Title Key");
         }
     }
 
@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
         try {
             fs::create_directories(opts.outputDir);
         } catch (const fs::filesystem_error &e) {
-            fmt::print(stderr, "Error: Failed to create output directory: {}\n", e.what());
+            spdlog::error("Failed to create output directory: {}", e.what());
             return 1;
         }
     }
@@ -196,12 +196,11 @@ int main(int argc, char **argv) {
                                                             32,
                                                             false);
         if (convertResult) {
-            fmt::print("✓ Icon converted: {} -> {}\n",
+            spdlog::info("✓ Icon converted: {} -> {}",
                        opts.iconFile.string(),
                        outputIcon.string());
         } else {
-            fmt::print(stderr,
-                       "✗ Warning: Failed to convert icon: {}\n",
+            spdlog::warn("Failed to convert icon: {}",
                        wiivc::errorToString(convertResult.error()));
         }
     }
@@ -215,12 +214,11 @@ int main(int argc, char **argv) {
                                                             24,
                                                             false);
         if (convertResult) {
-            fmt::print("✓ Banner converted: {} -> {}\n",
+            spdlog::info("✓ Banner converted: {} -> {}",
                        opts.bannerFile.string(),
                        outputBanner.string());
         } else {
-            fmt::print(stderr,
-                       "✗ Warning: Failed to convert banner: {}\n",
+            spdlog::warn("Failed to convert banner: {}",
                        wiivc::errorToString(convertResult.error()));
         }
     }
@@ -237,10 +235,9 @@ int main(int argc, char **argv) {
         auto appXmlPath = opts.outputDir / "app.xml";
         auto appResult = wiivc::xmlgen::saveAppXML(appXmlPath, appConfig);
         if (appResult) {
-            fmt::print("✓ Generated app.xml: {}\n", appXmlPath.string());
+            spdlog::info("✓ Generated app.xml: {}", appXmlPath.string());
         } else {
-            fmt::print(stderr,
-                       "✗ Warning: Failed to generate app.xml: {}\n",
+            spdlog::warn("Failed to generate app.xml: {}",
                        wiivc::errorToString(appResult.error()));
         }
 
@@ -266,10 +263,9 @@ int main(int argc, char **argv) {
         auto metaXmlPath = opts.outputDir / "meta.xml";
         auto metaResult = wiivc::xmlgen::saveMetaXML(metaXmlPath, metaConfig);
         if (metaResult) {
-            fmt::print("✓ Generated meta.xml: {}\n", metaXmlPath.string());
+            spdlog::info("✓ Generated meta.xml: {}", metaXmlPath.string());
         } else {
-            fmt::print(stderr,
-                       "✗ Warning: Failed to generate meta.xml: {}\n",
+            spdlog::warn("Failed to generate meta.xml: {}",
                        wiivc::errorToString(metaResult.error()));
         }
     }
@@ -278,16 +274,15 @@ int main(int argc, char **argv) {
     if (opts.extractISO || opts.convertToNFS) {
         wiivc::isotools::WitTool wit;
         
-        fmt::print("✓ Using built-in ISO extraction library\n");
+        spdlog::info("✓ Using built-in ISO extraction library");
 
         if (opts.extractISO) {
             auto extractDir = opts.outputDir / "extracted";
             auto extractResult = wit.extractISO(opts.inputFile, extractDir, opts.verbose);
             if (extractResult) {
-                fmt::print("✓ ISO extracted to: {}\n", extractDir.string());
+                spdlog::info("✓ ISO extracted to: {}", extractDir.string());
             } else {
-                fmt::print(stderr,
-                           "✗ Warning: Failed to extract ISO: {}\n",
+                spdlog::warn("Failed to extract ISO: {}",
                            wiivc::errorToString(extractResult.error()));
             }
         }
@@ -296,10 +291,9 @@ int main(int argc, char **argv) {
             auto trimmedISO = opts.outputDir / "trimmed.iso";
             auto trimResult = wit.trimISO(opts.inputFile, trimmedISO, opts.verbose);
             if (trimResult) {
-                fmt::print("✓ ISO trimmed: {}\n", trimmedISO.string());
+                spdlog::info("✓ ISO trimmed: {}", trimmedISO.string());
             } else {
-                fmt::print(stderr,
-                           "✗ Warning: Failed to trim ISO: {}\n",
+                spdlog::warn("Failed to trim ISO: {}",
                            wiivc::errorToString(trimResult.error()));
             }
         }
@@ -309,19 +303,18 @@ int main(int argc, char **argv) {
     if (opts.convertToNFS && !opts.keyFile.empty()) {
         wiivc::nfstools::NfsTool nfs;
         
-        fmt::print("✓ Using built-in NFS conversion library\n");
+        spdlog::info("✓ Using built-in NFS conversion library");
 
         auto nfsDir = opts.outputDir / "nfs";
         auto nfsResult = nfs.isoToNfs(opts.inputFile, nfsDir, opts.keyFile, opts.verbose);
         if (nfsResult) {
-            fmt::print("✓ ISO converted to NFS format: {}\n", nfsDir.string());
+            spdlog::info("✓ ISO converted to NFS format: {}", nfsDir.string());
         } else {
-            fmt::print(stderr,
-                       "✗ Warning: Failed to convert to NFS: {}\n",
+            spdlog::warn("Failed to convert to NFS: {}",
                        wiivc::errorToString(nfsResult.error()));
         }
     } else if (opts.convertToNFS) {
-        fmt::print(stderr, "✗ Warning: --key-file required for NFS conversion\n");
+        spdlog::warn("--key-file required for NFS conversion");
     }
 
     // TODO: Implement the actual conversion logic
@@ -331,19 +324,19 @@ int main(int argc, char **argv) {
     // 3. Downloading base files from Nintendo CDN
     // 4. Encrypting and packaging
 
-    fmt::print("\n=== Conversion Status ===\n");
-    fmt::print("✓ File format detection implemented\n");
-    fmt::print("✓ Game information extraction implemented\n");
-    fmt::print("✓ Image conversion (PNG to TGA) implemented\n");
-    fmt::print("✓ XML generation (app.xml, meta.xml) implemented\n");
-    fmt::print("✓ Encryption key verification implemented\n");
-    fmt::print("✓ ISO manipulation (library-based) implemented\n");
-    fmt::print("✓ NFS conversion (library-based) implemented\n");
-    fmt::print("\nNo external processes required - all functionality built-in!\n");
-    fmt::print("\nRemaining work:\n");
-    fmt::print("  - Audio conversion (WAV to BTSND)\n");
-    fmt::print("  - WUP packaging (NUSPacker functionality)\n");
+    spdlog::info("\n=== Conversion Status ===");
+    spdlog::info("✓ File format detection implemented");
+    spdlog::info("✓ Game information extraction implemented");
+    spdlog::info("✓ Image conversion (PNG to TGA) implemented");
+    spdlog::info("✓ XML generation (app.xml, meta.xml) implemented");
+    spdlog::info("✓ Encryption key verification implemented");
+    spdlog::info("✓ ISO manipulation (library-based) implemented");
+    spdlog::info("✓ NFS conversion (library-based) implemented");
+    spdlog::info("\nNo external processes required - all functionality built-in!");
+    spdlog::info("\nRemaining work:");
+    spdlog::info("  - Audio conversion (WAV to BTSND)");
+    spdlog::info("  - WUP packaging (NUSPacker functionality)");
 
-    fmt::print("\nExecution completed successfully.\n");
+    spdlog::info("\nExecution completed successfully.");
     return 0;
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 #include "wiivc/isotools.h"
 #include "wiivc/isoextract.h"
-#include <fmt/core.h>
+#include <spdlog/spdlog.h>
 
 namespace wiivc::isotools {
 
@@ -36,7 +36,7 @@ namespace wiivc::isotools {
         auto result = extractor.extractIso(isoPath, outputDir);
 
         if (verbose && result) {
-            fmt::print("ISO extracted: {} -> {}\n", isoPath.string(), outputDir.string());
+            spdlog::info("ISO extracted: {} -> {}", isoPath.string(), outputDir.string());
         }
 
         return result;
@@ -55,7 +55,7 @@ namespace wiivc::isotools {
         auto result = extractor.convertFormat(inputPath, outputPath);
 
         if (verbose && result) {
-            fmt::print("Format converted: {} -> {}\n", inputPath.string(), outputPath.string());
+            spdlog::info("Format converted: {} -> {}", inputPath.string(), outputPath.string());
         }
 
         return result;
@@ -94,7 +94,7 @@ namespace wiivc::isotools {
         auto result = extractor.trimIso(isoPath, outputPath);
 
         if (verbose && result) {
-            fmt::print("ISO trimmed: {} -> {}\n", isoPath.string(), outputPath.string());
+            spdlog::info("ISO trimmed: {} -> {}", isoPath.string(), outputPath.string());
         }
 
         return result;
