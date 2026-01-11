@@ -9,6 +9,8 @@ add_executable(wiivc-injector
     utils/process.cpp
     utils/isotools.cpp
     utils/nfstools.cpp
+    utils/nfsconvert.cpp
+    utils/isoextract.cpp
 )
 
 target_include_directories(wiivc-injector PRIVATE

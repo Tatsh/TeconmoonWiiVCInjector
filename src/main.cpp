@@ -274,71 +274,51 @@ int main(int argc, char **argv) {
         }
     }
 
-    // ISO manipulation with wit
+    // ISO manipulation with library
     if (opts.extractISO || opts.convertToNFS) {
         wiivc::isotools::WitTool wit;
-        if (!opts.witPath.empty()) {
-            wit.setExecutablePath(opts.witPath);
+        
+        fmt::print("✓ Using built-in ISO extraction library\n");
+
+        if (opts.extractISO) {
+            auto extractDir = opts.outputDir / "extracted";
+            auto extractResult = wit.extractISO(opts.inputFile, extractDir, opts.verbose);
+            if (extractResult) {
+                fmt::print("✓ ISO extracted to: {}\n", extractDir.string());
+            } else {
+                fmt::print(stderr,
+                           "✗ Warning: Failed to extract ISO: {}\n",
+                           wiivc::errorToString(extractResult.error()));
+            }
         }
 
-        auto witAvailable = wit.isAvailable();
-        if (!witAvailable || !*witAvailable) {
-            fmt::print(stderr,
-                       "✗ Warning: wit (Wiimms ISO Tools) not found. Install or specify --wit-path\n");
-        } else {
-            fmt::print("✓ wit (Wiimms ISO Tools) detected at: {}\n",
-                       wit.getExecutablePath().string());
-
-            if (opts.extractISO) {
-                auto extractDir = opts.outputDir / "extracted";
-                auto extractResult = wit.extractISO(opts.inputFile, extractDir, opts.verbose);
-                if (extractResult) {
-                    fmt::print("✓ ISO extracted to: {}\n", extractDir.string());
-                } else {
-                    fmt::print(stderr,
-                               "✗ Warning: Failed to extract ISO: {}\n",
-                               wiivc::errorToString(extractResult.error()));
-                }
-            }
-
-            if (!opts.noTrimming) {
-                auto trimmedISO = opts.outputDir / "trimmed.iso";
-                auto trimResult = wit.trimISO(opts.inputFile, trimmedISO, opts.verbose);
-                if (trimResult) {
-                    fmt::print("✓ ISO trimmed: {}\n", trimmedISO.string());
-                } else {
-                    fmt::print(stderr,
-                               "✗ Warning: Failed to trim ISO: {}\n",
-                               wiivc::errorToString(trimResult.error()));
-                }
+        if (!opts.noTrimming) {
+            auto trimmedISO = opts.outputDir / "trimmed.iso";
+            auto trimResult = wit.trimISO(opts.inputFile, trimmedISO, opts.verbose);
+            if (trimResult) {
+                fmt::print("✓ ISO trimmed: {}\n", trimmedISO.string());
+            } else {
+                fmt::print(stderr,
+                           "✗ Warning: Failed to trim ISO: {}\n",
+                           wiivc::errorToString(trimResult.error()));
             }
         }
     }
 
-    // NFS conversion
+    // NFS conversion with library
     if (opts.convertToNFS && !opts.keyFile.empty()) {
         wiivc::nfstools::NfsTool nfs;
-        if (!opts.nfsPath.empty()) {
-            nfs.setExecutablePath(opts.nfsPath);
-        }
+        
+        fmt::print("✓ Using built-in NFS conversion library\n");
 
-        auto nfsAvailable = nfs.isAvailable();
-        if (!nfsAvailable || !*nfsAvailable) {
-            fmt::print(stderr,
-                       "✗ Warning: nfs2iso2nfs not found. Install or specify --nfs-path\n");
+        auto nfsDir = opts.outputDir / "nfs";
+        auto nfsResult = nfs.isoToNfs(opts.inputFile, nfsDir, opts.keyFile, opts.verbose);
+        if (nfsResult) {
+            fmt::print("✓ ISO converted to NFS format: {}\n", nfsDir.string());
         } else {
-            fmt::print("✓ nfs2iso2nfs detected at: {}\n", nfs.getExecutablePath().string());
-
-            auto nfsDir = opts.outputDir / "nfs";
-            auto nfsResult =
-                nfs.isoToNfs(opts.inputFile, nfsDir, opts.keyFile, opts.verbose);
-            if (nfsResult) {
-                fmt::print("✓ ISO converted to NFS format: {}\n", nfsDir.string());
-            } else {
-                fmt::print(stderr,
-                           "✗ Warning: Failed to convert to NFS: {}\n",
-                           wiivc::errorToString(nfsResult.error()));
-            }
+            fmt::print(stderr,
+                       "✗ Warning: Failed to convert to NFS: {}\n",
+                       wiivc::errorToString(nfsResult.error()));
         }
     } else if (opts.convertToNFS) {
         fmt::print(stderr, "✗ Warning: --key-file required for NFS conversion\n");
@@ -357,8 +337,9 @@ int main(int argc, char **argv) {
     fmt::print("✓ Image conversion (PNG to TGA) implemented\n");
     fmt::print("✓ XML generation (app.xml, meta.xml) implemented\n");
     fmt::print("✓ Encryption key verification implemented\n");
-    fmt::print("✓ ISO manipulation (wit integration) implemented\n");
-    fmt::print("✓ NFS conversion (nfs2iso2nfs integration) implemented\n");
+    fmt::print("✓ ISO manipulation (library-based) implemented\n");
+    fmt::print("✓ NFS conversion (library-based) implemented\n");
+    fmt::print("\nNo external processes required - all functionality built-in!\n");
     fmt::print("\nRemaining work:\n");
     fmt::print("  - Audio conversion (WAV to BTSND)\n");
     fmt::print("  - WUP packaging (NUSPacker functionality)\n");
