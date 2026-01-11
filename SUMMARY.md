@@ -159,15 +159,19 @@ The framework is complete. These features require external tool integration:
 - WAV to BTSND conversion (format specification needed)
 - Audio resampling and format conversion
 
-### ISO Manipulation
-- ISO extraction and rebuilding
-- Option 1: Integrate wit (Wiimms ISO Tools) via process execution
-- Option 2: Implement direct ISO parsing
+### ISO Manipulation ✅ IMPLEMENTED
+- ISO extraction and rebuilding via wit (Wiimms ISO Tools)
+- Format conversion (ISO ↔ WBFS ↔ NKIT)
+- ISO trimming to remove padding
+- Disc information reading
+- Auto-detection in PATH or custom path
 
-### NFS Conversion
-- Convert ISO to NFS format for Wii U
-- Option 1: Port nfs2iso2nfs to C++
-- Option 2: Integrate as external tool via process execution
+### NFS Conversion ✅ IMPLEMENTED
+- Convert ISO to NFS format for Wii U via nfs2iso2nfs
+- Convert NFS back to ISO
+- Encryption with key file support
+- Passthrough and encrypted modes
+- Auto-detection in PATH or custom path
 
 ### Package Creation
 - Generate app.xml and meta.xml ✅ IMPLEMENTED
