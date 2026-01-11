@@ -3,15 +3,15 @@
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
-#include <openssl/md5.h>
+#include <openssl/evp.h>
 #include <sstream>
 
 namespace wiivc::crypto {
 
     namespace {
-        std::string formatMD5Hash(const unsigned char *hash) {
+        std::string formatMD5Hash(const unsigned char *hash, size_t length) {
             std::ostringstream oss;
-            for (int i = 0; i < MD5_DIGEST_LENGTH; ++i) {
+            for (size_t i = 0; i < length; ++i) {
                 if (i > 0) {
                     oss << "-";
                 }
@@ -33,15 +33,43 @@ namespace wiivc::crypto {
     } // namespace
 
     Result<std::string> computeMD5(const std::vector<uint8_t> &data) {
-        unsigned char hash[MD5_DIGEST_LENGTH];
-        MD5(data.data(), data.size(), hash);
-        return formatMD5Hash(hash);
+        unsigned char hash[EVP_MAX_MD_SIZE];
+        unsigned int hashLength = 0;
+
+        EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+        if (!mdctx) {
+            return std::unexpected(ErrorCode::EncryptionError);
+        }
+
+        if (EVP_DigestInit_ex(mdctx, EVP_md5(), nullptr) != 1 ||
+            EVP_DigestUpdate(mdctx, data.data(), data.size()) != 1 ||
+            EVP_DigestFinal_ex(mdctx, hash, &hashLength) != 1) {
+            EVP_MD_CTX_free(mdctx);
+            return std::unexpected(ErrorCode::EncryptionError);
+        }
+
+        EVP_MD_CTX_free(mdctx);
+        return formatMD5Hash(hash, hashLength);
     }
 
     Result<std::string> computeMD5(std::string_view data) {
-        unsigned char hash[MD5_DIGEST_LENGTH];
-        MD5(reinterpret_cast<const unsigned char *>(data.data()), data.size(), hash);
-        return formatMD5Hash(hash);
+        unsigned char hash[EVP_MAX_MD_SIZE];
+        unsigned int hashLength = 0;
+
+        EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+        if (!mdctx) {
+            return std::unexpected(ErrorCode::EncryptionError);
+        }
+
+        if (EVP_DigestInit_ex(mdctx, EVP_md5(), nullptr) != 1 ||
+            EVP_DigestUpdate(mdctx, data.data(), data.size()) != 1 ||
+            EVP_DigestFinal_ex(mdctx, hash, &hashLength) != 1) {
+            EVP_MD_CTX_free(mdctx);
+            return std::unexpected(ErrorCode::EncryptionError);
+        }
+
+        EVP_MD_CTX_free(mdctx);
+        return formatMD5Hash(hash, hashLength);
     }
 
     Result<std::string> computeMD5(const std::filesystem::path &file) {
@@ -50,20 +78,35 @@ namespace wiivc::crypto {
             return std::unexpected(ErrorCode::FileNotFound);
         }
 
-        MD5_CTX md5Context;
-        MD5_Init(&md5Context);
+        EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+        if (!mdctx) {
+            return std::unexpected(ErrorCode::EncryptionError);
+        }
+
+        if (EVP_DigestInit_ex(mdctx, EVP_md5(), nullptr) != 1) {
+            EVP_MD_CTX_free(mdctx);
+            return std::unexpected(ErrorCode::EncryptionError);
+        }
 
         constexpr size_t bufferSize = 8192;
         std::array<char, bufferSize> buffer;
 
         while (stream.read(buffer.data(), buffer.size()) || stream.gcount() > 0) {
-            MD5_Update(&md5Context, buffer.data(), stream.gcount());
+            if (EVP_DigestUpdate(mdctx, buffer.data(), stream.gcount()) != 1) {
+                EVP_MD_CTX_free(mdctx);
+                return std::unexpected(ErrorCode::EncryptionError);
+            }
         }
 
-        unsigned char hash[MD5_DIGEST_LENGTH];
-        MD5_Final(hash, &md5Context);
+        unsigned char hash[EVP_MAX_MD_SIZE];
+        unsigned int hashLength = 0;
+        if (EVP_DigestFinal_ex(mdctx, hash, &hashLength) != 1) {
+            EVP_MD_CTX_free(mdctx);
+            return std::unexpected(ErrorCode::EncryptionError);
+        }
 
-        return formatMD5Hash(hash);
+        EVP_MD_CTX_free(mdctx);
+        return formatMD5Hash(hash, hashLength);
     }
 
     Result<bool> verifyMD5(const std::vector<uint8_t> &data, std::string_view expectedHash) {
