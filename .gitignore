@@ -2,3 +2,23 @@ TeconMoon's WiiVC Injector/bin/*
 TeconMoon's WiiVC Injector/obj/*
 .vs/*
 /packages
+
+# C++ build artifacts
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+vcpkg_installed/
+*.swp
+*.swo
+*~
+.DS_Store
+compile_commands.json
