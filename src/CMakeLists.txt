@@ -2,6 +2,7 @@ add_executable(wiivc-injector
     main.cpp
     utils/gamedatabase.cpp
     utils/fileformat.cpp
+    utils/crypto.cpp
 )
 
 target_include_directories(wiivc-injector PRIVATE

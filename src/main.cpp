@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+#include "wiivc/crypto.h"
 #include "wiivc/fileformat.h"
 #include "wiivc/gamedatabase.h"
 #include "wiivc/stringutils.h"
@@ -135,6 +136,25 @@ int main(int argc, char **argv) {
     auto gameNameResult = wiivc::FileFormatDetector::readGameName(opts.inputFile);
     if (gameNameResult && opts.verbose) {
         fmt::print("Internal name: {}\n", *gameNameResult);
+    }
+
+    // Verify encryption keys if provided
+    if (!opts.commonKey.empty()) {
+        auto verifyResult = wiivc::crypto::verifyWiiUCommonKey(opts.commonKey);
+        if (verifyResult && *verifyResult) {
+            fmt::print("✓ Wii U Common Key verified\n");
+        } else {
+            fmt::print(stderr, "✗ Warning: Invalid Wii U Common Key\n");
+        }
+    }
+
+    if (!opts.titleKey.empty()) {
+        auto verifyResult = wiivc::crypto::verifyTitleKey(opts.titleKey);
+        if (verifyResult && *verifyResult) {
+            fmt::print("✓ Title Key verified\n");
+        } else {
+            fmt::print(stderr, "✗ Warning: Invalid Title Key\n");
+        }
     }
 
     // Create output directory if needed
