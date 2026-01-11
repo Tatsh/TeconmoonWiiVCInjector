@@ -2,8 +2,10 @@
 #include "wiivc/crypto.h"
 #include "wiivc/fileformat.h"
 #include "wiivc/gamedatabase.h"
+#include "wiivc/imageconvert.h"
 #include "wiivc/stringutils.h"
 #include "wiivc/types.h"
+#include "wiivc/xmlgen.h"
 #include <CLI/CLI.hpp>
 #include <fmt/core.h>
 #include <filesystem>
@@ -167,23 +169,114 @@ int main(int argc, char **argv) {
         }
     }
 
+    // Process images if provided
+    if (!opts.iconFile.empty()) {
+        auto outputIcon = opts.outputDir / "iconTex.tga";
+        auto convertResult = wiivc::image::convertPNGToTGA(opts.iconFile,
+                                                            outputIcon,
+                                                            128,
+                                                            128,
+                                                            32,
+                                                            false);
+        if (convertResult) {
+            fmt::print("✓ Icon converted: {} -> {}\n",
+                       opts.iconFile.string(),
+                       outputIcon.string());
+        } else {
+            fmt::print(stderr,
+                       "✗ Warning: Failed to convert icon: {}\n",
+                       wiivc::errorToString(convertResult.error()));
+        }
+    }
+
+    if (!opts.bannerFile.empty()) {
+        auto outputBanner = opts.outputDir / "bootTvTex.tga";
+        auto convertResult = wiivc::image::convertPNGToTGA(opts.bannerFile,
+                                                            outputBanner,
+                                                            1280,
+                                                            720,
+                                                            24,
+                                                            false);
+        if (convertResult) {
+            fmt::print("✓ Banner converted: {} -> {}\n",
+                       opts.bannerFile.string(),
+                       outputBanner.string());
+        } else {
+            fmt::print(stderr,
+                       "✗ Warning: Failed to convert banner: {}\n",
+                       wiivc::errorToString(convertResult.error()));
+        }
+    }
+
+    // Generate XML files if we have enough information
+    if (gameIdResult && !opts.titleId.empty()) {
+        std::string gameId(gameIdResult->data(), 4);
+        
+        // Generate app.xml
+        wiivc::xmlgen::AppXMLConfig appConfig;
+        appConfig.titleId = "00050002" + opts.titleId;
+        appConfig.titleIdHex = opts.titleId;
+        
+        auto appXmlPath = opts.outputDir / "app.xml";
+        auto appResult = wiivc::xmlgen::saveAppXML(appXmlPath, appConfig);
+        if (appResult) {
+            fmt::print("✓ Generated app.xml: {}\n", appXmlPath.string());
+        } else {
+            fmt::print(stderr,
+                       "✗ Warning: Failed to generate app.xml: {}\n",
+                       wiivc::errorToString(appResult.error()));
+        }
+
+        // Generate meta.xml
+        wiivc::xmlgen::MetaXMLConfig metaConfig;
+        metaConfig.titleId = "00050002" + opts.titleId;
+        metaConfig.titleIdHex = opts.titleId;
+        metaConfig.productCode = "WUP-N-" + gameId;
+        
+        if (!opts.gameName.empty()) {
+            metaConfig.longName = opts.gameName;
+            metaConfig.shortName = opts.gameName;
+        } else if (gameNameResult) {
+            metaConfig.longName = *gameNameResult;
+            metaConfig.shortName = *gameNameResult;
+        } else {
+            metaConfig.longName = gameId;
+            metaConfig.shortName = gameId;
+        }
+
+        metaConfig.drcUse = 1; // Default DRC usage
+        
+        auto metaXmlPath = opts.outputDir / "meta.xml";
+        auto metaResult = wiivc::xmlgen::saveMetaXML(metaXmlPath, metaConfig);
+        if (metaResult) {
+            fmt::print("✓ Generated meta.xml: {}\n", metaXmlPath.string());
+        } else {
+            fmt::print(stderr,
+                       "✗ Warning: Failed to generate meta.xml: {}\n",
+                       wiivc::errorToString(metaResult.error()));
+        }
+    }
+
     // TODO: Implement the actual conversion logic
     // This would involve:
-    // 1. Converting images to required formats
-    // 2. Building the injection package
-    // 3. Encrypting with provided keys
-    // 4. Creating output package
+    // 1. Extracting/converting ISO if needed
+    // 2. Converting audio files
+    // 3. Downloading base files from Nintendo CDN
+    // 4. Encrypting and packaging
 
     fmt::print("\n=== Conversion Status ===\n");
-    fmt::print("Note: Full conversion logic not yet implemented.\n");
-    fmt::print("This would require integrating or porting tools like:\n");
-    fmt::print("  - wit (Wiimms ISO Tools)\n");
-    fmt::print("  - nfs2iso2nfs\n");
-    fmt::print("  - JNUSTool\n");
-    fmt::print("  - NUSPacker\n");
-    fmt::print("  - Image conversion libraries\n");
-    fmt::print("  - Audio conversion libraries\n");
+    fmt::print("✓ File format detection implemented\n");
+    fmt::print("✓ Game information extraction implemented\n");
+    fmt::print("✓ Image conversion (PNG to TGA) implemented\n");
+    fmt::print("✓ XML generation (app.xml, meta.xml) implemented\n");
+    fmt::print("✓ Encryption key verification implemented\n");
+    fmt::print("\nRemaining work:\n");
+    fmt::print("  - Audio conversion (WAV to BTSND)\n");
+    fmt::print("  - ISO extraction/manipulation (wit integration)\n");
+    fmt::print("  - NFS conversion (nfs2iso2nfs integration)\n");
+    fmt::print("  - Base file download (JNUSTool functionality)\n");
+    fmt::print("  - WUP packaging (NUSPacker functionality)\n");
 
-    fmt::print("\nPlaceholder execution completed successfully.\n");
+    fmt::print("\nExecution completed successfully.\n");
     return 0;
 }

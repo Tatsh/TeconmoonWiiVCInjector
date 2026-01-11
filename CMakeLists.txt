@@ -20,6 +20,7 @@ find_package(fmt CONFIG REQUIRED)
 find_package(pugixml CONFIG REQUIRED)
 find_package(CURL REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_path(STB_INCLUDE_DIRS "stb_image.h")
 
 # Platform-specific libraries
 if(WIN32)

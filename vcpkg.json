@@ -10,6 +10,7 @@
     "pugixml",
     "curl",
     "openssl",
-    "zlib"
+    "zlib",
+    "stb"
   ]
 }

@@ -3,10 +3,13 @@ add_executable(wiivc-injector
     utils/gamedatabase.cpp
     utils/fileformat.cpp
     utils/crypto.cpp
+    utils/imageconvert.cpp
+    utils/xmlgen.cpp
 )
 
 target_include_directories(wiivc-injector PRIVATE
     ${CMAKE_SOURCE_DIR}/include
+    ${STB_INCLUDE_DIRS}
 )
 
 target_link_libraries(wiivc-injector PRIVATE
