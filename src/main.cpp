@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+#include "wiivc/fileformat.h"
 #include "wiivc/gamedatabase.h"
 #include "wiivc/stringutils.h"
 #include "wiivc/types.h"
@@ -90,6 +91,52 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    // Detect file type
+    auto fileTypeResult = wiivc::FileFormatDetector::detectFileType(opts.inputFile);
+    if (!fileTypeResult) {
+        fmt::print(stderr, "Error: Failed to detect file type\n");
+        return 1;
+    }
+
+    if (opts.verbose) {
+        const char *typeStr = "Unknown";
+        switch (*fileTypeResult) {
+            case wiivc::FileType::ISO:
+                typeStr = "ISO";
+                break;
+            case wiivc::FileType::WBFS:
+                typeStr = "WBFS";
+                break;
+            case wiivc::FileType::NKIT:
+                typeStr = "NKIT";
+                break;
+            case wiivc::FileType::NASOS:
+                typeStr = "NASOS";
+                break;
+            case wiivc::FileType::DOL:
+                typeStr = "DOL";
+                break;
+            case wiivc::FileType::GCM:
+                typeStr = "GameCube";
+                break;
+            default:
+                break;
+        }
+        fmt::print("Detected file type: {}\n", typeStr);
+    }
+
+    // Read game information
+    auto gameIdResult = wiivc::FileFormatDetector::readGameId(opts.inputFile);
+    if (gameIdResult && opts.verbose) {
+        std::string gameId(gameIdResult->data(), 4);
+        fmt::print("Game ID: {}\n", gameId);
+    }
+
+    auto gameNameResult = wiivc::FileFormatDetector::readGameName(opts.inputFile);
+    if (gameNameResult && opts.verbose) {
+        fmt::print("Internal name: {}\n", *gameNameResult);
+    }
+
     // Create output directory if needed
     if (!fs::exists(opts.outputDir)) {
         try {
@@ -102,13 +149,12 @@ int main(int argc, char **argv) {
 
     // TODO: Implement the actual conversion logic
     // This would involve:
-    // 1. Detecting file type (ISO, WBFS, NKIT, NASOS, etc.)
-    // 2. Reading game information from the disc image
-    // 3. Converting images to required formats
-    // 4. Building the injection package
-    // 5. Encrypting with provided keys
-    // 6. Creating output package
+    // 1. Converting images to required formats
+    // 2. Building the injection package
+    // 3. Encrypting with provided keys
+    // 4. Creating output package
 
+    fmt::print("\n=== Conversion Status ===\n");
     fmt::print("Note: Full conversion logic not yet implemented.\n");
     fmt::print("This would require integrating or porting tools like:\n");
     fmt::print("  - wit (Wiimms ISO Tools)\n");
