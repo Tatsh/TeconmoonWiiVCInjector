@@ -150,8 +150,8 @@ wiivc-injector -i game.iso -o output_dir \
 
 The framework is complete. These features require external tool integration:
 
-### Image Processing
-- PNG to TGA conversion (can use stb_image library)
+### Image Processing ✅ IMPLEMENTED
+- PNG to TGA conversion using stb_image
 - Image resizing and format conversion
 - Icon (128x128), Banner (1280x720), DRC (854x480) generation
 
@@ -161,24 +161,24 @@ The framework is complete. These features require external tool integration:
 
 ### ISO Manipulation
 - ISO extraction and rebuilding
-- Option 1: Integrate wit (Wiimms ISO Tools) as library
+- Option 1: Integrate wit (Wiimms ISO Tools) via process execution
 - Option 2: Implement direct ISO parsing
 
 ### NFS Conversion
 - Convert ISO to NFS format for Wii U
 - Option 1: Port nfs2iso2nfs to C++
-- Option 2: Integrate as external tool
+- Option 2: Integrate as external tool via process execution
 
 ### Package Creation
-- Generate app.xml and meta.xml
+- Generate app.xml and meta.xml ✅ IMPLEMENTED
 - WUP package creation
 - Option 1: Port NUSPacker to C++
 - Option 2: Implement WUP format directly
 
-### Nintendo CDN
-- Download base files from Nintendo servers
+### Nintendo CDN ✅ IMPLEMENTED
+- Download base files from Nintendo servers using curl
 - HTTP client with curl
-- File caching system
+- File caching system with MD5 verification
 
 ## File Structure
 
