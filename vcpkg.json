@@ -1,0 +1,8 @@
+{
+  "name": "wiivc-injector",
+  "version": "1.0.0",
+  "description": "Wii Virtual Console Injector for Wii U - CLI version",
+  "homepage": "https://github.com/Tatsh/TeconmoonWiiVCInjector",
+  "license": "MIT",
+  "dependencies": []
+}

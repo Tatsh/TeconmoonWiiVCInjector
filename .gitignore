@@ -2,3 +2,14 @@ TeconMoon's WiiVC Injector/bin/*
 TeconMoon's WiiVC Injector/obj/*
 .vs/*
 /packages
+
+# CMake and vcpkg
+/build/
+/vcpkg_installed/
+/CMakeUserPresets.json
+
+# General
+*.log
+*~
+.*.swp
+.DS_Store*
