@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "wiivc/crypto.h"
+#include "internal/crypto.h"
 #include <algorithm>
 #include <fstream>
 #include <iomanip>

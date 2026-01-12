@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "wiivc/audioconvert.h"
-#include "wiivc/crypto.h"
+#include "internal/crypto.h"
 #include "wiivc/fileformat.h"
 #include "wiivc/gamedatabase.h"
 #include "wiivc/imageconvert.h"
