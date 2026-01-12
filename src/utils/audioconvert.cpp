@@ -8,7 +8,8 @@
 
 namespace wiivc::audioconvert {
 
-// Private implementation details
+// Implementation details moved from header to minimize public interface
+// Only wavToBtsnd() is exposed in the public API
 
 // BTSND audio format constants
 constexpr uint32_t BTSND_MAGIC = 0x42545344; // 'BTSD'
