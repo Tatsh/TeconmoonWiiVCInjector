@@ -9,16 +9,10 @@
 
 namespace wiivc::isotools {
 
-    // Wrapper for wit (Wiimms ISO Tools) operations
+    // Native ISO manipulation operations
     class WitTool {
       public:
-        // Set the path to wit executable (auto-detected if not set)
-        void setExecutablePath(const std::filesystem::path &path);
-
-        // Get current executable path
-        [[nodiscard]] std::filesystem::path getExecutablePath() const;
-
-        // Check if wit is available
+        // Check if library is available
         [[nodiscard]] Result<bool> isAvailable();
 
         // Extract ISO to directory
@@ -47,12 +41,6 @@ namespace wiivc::isotools {
         [[nodiscard]] Result<void> trimISO(const std::filesystem::path &isoPath,
                                             const std::filesystem::path &outputPath,
                                             bool verbose = false);
-
-      private:
-        std::filesystem::path executablePath;
-        bool autoDetected{false};
-
-        [[nodiscard]] Result<void> autoDetectWit();
     };
 
 } // namespace wiivc::isotools

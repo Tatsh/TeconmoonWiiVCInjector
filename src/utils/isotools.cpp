@@ -5,22 +5,8 @@
 
 namespace wiivc::isotools {
 
-    void WitTool::setExecutablePath(const std::filesystem::path &path) {
-        executablePath = path;
-        autoDetected = false;
-    }
-
-    std::filesystem::path WitTool::getExecutablePath() const {
-        return executablePath;
-    }
-
-    Result<void> WitTool::autoDetectWit() {
-        // No longer needed - using library
-        return {};
-    }
-
     Result<bool> WitTool::isAvailable() {
-        // Library is always available
+        // Native library is always available
         return true;
     }
 
