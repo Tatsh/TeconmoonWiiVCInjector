@@ -6,7 +6,6 @@ add_executable(wiivc-injector
     utils/imageconvert.cpp
     utils/xmlgen.cpp
     utils/download.cpp
-    utils/process.cpp
     utils/isotools.cpp
     utils/nfstools.cpp
     utils/nfsconvert.cpp

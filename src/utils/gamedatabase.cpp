@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "wiivc/gamedatabase.h"
-#include "wiivc/stringutils.h"
+#include "../internal/stringutils.h"
 #include <algorithm>
 #include <fstream>
 #include <sstream>

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "wiivc/imageconvert.h"
+#include "../internal/imageconvert.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_RESIZE_IMPLEMENTATION

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include "wiivc/download.h"
+#include "../internal/download.h"
 #include "internal/crypto.h"
 #include <curl/curl.h>
 #include <fstream>
