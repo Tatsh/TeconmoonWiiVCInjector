@@ -11,6 +11,8 @@ add_executable(wiivc-injector
     utils/nfstools.cpp
     utils/nfsconvert.cpp
     utils/isoextract.cpp
+    utils/audioconvert.cpp
+    utils/wuppackage.cpp
 )
 
 target_include_directories(wiivc-injector PRIVATE
