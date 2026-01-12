@@ -4,10 +4,47 @@
 #include <bit>
 #include <cstring>
 #include <fstream>
+#include <vector>
 
 namespace wiivc::audioconvert {
 
-Result<WavHeader> readWavHeader(const std::filesystem::path &path) {
+// Private implementation details
+
+// BTSND audio format constants
+constexpr uint32_t BTSND_MAGIC = 0x42545344; // 'BTSD'
+constexpr uint32_t BTSND_VERSION = 0x00010000;
+
+// WAV format structures
+struct WavHeader {
+    char riffid[4];      // 'RIFF'
+    uint32_t filesize;   // File size - 8
+    char waveid[4];      // 'WAVE'
+    char fmtid[4];       // 'fmt '
+    uint32_t fmtsize;    // Format chunk size
+    uint16_t format;     // Audio format (1 = PCM)
+    uint16_t channels;   // Number of channels
+    uint32_t samplerate; // Sample rate
+    uint32_t byterate;   // Byte rate
+    uint16_t blockalign; // Block align
+    uint16_t bitspersample; // Bits per sample
+    char dataid[4];      // 'data'
+    uint32_t datasize;   // Data size
+};
+
+// BTSND format structures
+struct BtsndHeader {
+    uint32_t magic;      // 'BTSD'
+    uint32_t version;    // Version
+    uint32_t samplerate; // Sample rate
+    uint32_t channels;   // Number of channels (1 or 2)
+    uint32_t loopstart;  // Loop start sample
+    uint32_t datasize;   // Audio data size in bytes
+    uint32_t reserved[2]; // Reserved
+};
+
+// Private helper functions
+
+static Result<WavHeader> readWavHeader(const std::filesystem::path &path) {
     std::ifstream file(path, std::ios::binary);
     if (!file) {
         return std::unexpected(ErrorCode::FileNotFound);
@@ -33,8 +70,8 @@ Result<WavHeader> readWavHeader(const std::filesystem::path &path) {
     return header;
 }
 
-Result<std::vector<uint8_t>> convertPCMSamples(const std::vector<uint8_t> &wavData,
-                                                const WavHeader &header) {
+static Result<std::vector<uint8_t>> convertPCMSamples(const std::vector<uint8_t> &wavData,
+                                                       const WavHeader &header) {
     std::vector<uint8_t> output;
     output.reserve(wavData.size());
 
