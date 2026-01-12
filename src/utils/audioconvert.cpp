@@ -16,7 +16,7 @@ Result<WavHeader> readWavHeader(const std::filesystem::path &path) {
     WavHeader header{};
     file.read(reinterpret_cast<char *>(&header), sizeof(WavHeader));
     if (!file) {
-        return std::unexpected(ErrorCode::InvalidFormat);
+        return std::unexpected(ErrorCode::IOError);
     }
 
     // Verify RIFF header
@@ -27,7 +27,7 @@ Result<WavHeader> readWavHeader(const std::filesystem::path &path) {
 
     // Verify format
     if (header.format != 1) { // Must be PCM
-        return std::unexpected(ErrorCode::UnsupportedFormat);
+        return std::unexpected(ErrorCode::InvalidFormat);
     }
 
     return header;
@@ -60,7 +60,7 @@ Result<std::vector<uint8_t>> convertPCMSamples(const std::vector<uint8_t> &wavDa
             output.push_back(static_cast<uint8_t>(sample & 0xFF));
         }
     } else {
-        return std::unexpected(ErrorCode::UnsupportedFormat);
+        return std::unexpected(ErrorCode::InvalidFormat);
     }
 
     return output;
@@ -86,7 +86,7 @@ Result<void> wavToBtsnd(const std::filesystem::path &wavPath,
     std::vector<uint8_t> wavData(wavHeader.datasize);
     wavFile.read(reinterpret_cast<char *>(wavData.data()), wavHeader.datasize);
     if (!wavFile) {
-        return std::unexpected(ErrorCode::ReadError);
+        return std::unexpected(ErrorCode::IOError);
     }
 
     // Convert samples
@@ -120,7 +120,7 @@ Result<void> wavToBtsnd(const std::filesystem::path &wavPath,
     // Write BTSND file
     std::ofstream outFile(btsndPath, std::ios::binary);
     if (!outFile) {
-        return std::unexpected(ErrorCode::FileCreationFailed);
+        return std::unexpected(ErrorCode::IOError);
     }
 
     outFile.write(reinterpret_cast<const char *>(&btsndHeader), sizeof(BtsndHeader));
@@ -128,7 +128,7 @@ Result<void> wavToBtsnd(const std::filesystem::path &wavPath,
                   convertedData.size());
 
     if (!outFile) {
-        return std::unexpected(ErrorCode::WriteError);
+        return std::unexpected(ErrorCode::IOError);
     }
 
     return {};

@@ -12,6 +12,12 @@
 namespace wiivc::wuppackage {
 
 namespace {
+// Buffer size for SHA256 hashing
+constexpr size_t SHA256_BUFFER_SIZE = 65536;
+
+// Title key size in bytes
+constexpr size_t TITLE_KEY_SIZE = 16;
+
 // Helper to write big-endian values
 template <typename T> void writeBE(std::vector<uint8_t> &buf, T value) {
     if constexpr (std::endian::native == std::endian::little) {
@@ -37,21 +43,20 @@ Result<std::array<uint8_t, 32>> sha256File(const std::filesystem::path &path) {
 
     EVP_MD_CTX *ctx = EVP_MD_CTX_new();
     if (ctx == nullptr) {
-        return std::unexpected(ErrorCode::CryptoError);
+        return std::unexpected(ErrorCode::EncryptionError);
     }
 
     if (EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr) != 1) {
         EVP_MD_CTX_free(ctx);
-        return std::unexpected(ErrorCode::CryptoError);
+        return std::unexpected(ErrorCode::EncryptionError);
     }
 
-    constexpr size_t BUFFER_SIZE = 65536;
-    std::vector<uint8_t> buffer(BUFFER_SIZE);
+    std::vector<uint8_t> buffer(SHA256_BUFFER_SIZE);
 
-    while (file.read(reinterpret_cast<char *>(buffer.data()), BUFFER_SIZE) || file.gcount() > 0) {
+    while (file.read(reinterpret_cast<char *>(buffer.data()), SHA256_BUFFER_SIZE) || file.gcount() > 0) {
         if (EVP_DigestUpdate(ctx, buffer.data(), file.gcount()) != 1) {
             EVP_MD_CTX_free(ctx);
-            return std::unexpected(ErrorCode::CryptoError);
+            return std::unexpected(ErrorCode::EncryptionError);
         }
     }
 
@@ -59,7 +64,7 @@ Result<std::array<uint8_t, 32>> sha256File(const std::filesystem::path &path) {
     unsigned int hashLen = 0;
     if (EVP_DigestFinal_ex(ctx, hash.data(), &hashLen) != 1) {
         EVP_MD_CTX_free(ctx);
-        return std::unexpected(ErrorCode::CryptoError);
+        return std::unexpected(ErrorCode::EncryptionError);
     }
 
     EVP_MD_CTX_free(ctx);
@@ -82,30 +87,30 @@ WUPPackager::encryptTitleKey(const std::array<uint8_t, 16> &titleKey,
     // Encrypt title key with common key using AES-128-CBC
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     if (ctx == nullptr) {
-        return std::unexpected(ErrorCode::CryptoError);
+        return std::unexpected(ErrorCode::EncryptionError);
     }
 
     if (EVP_EncryptInit_ex(ctx, EVP_aes_128_cbc(), nullptr, commonKey.data(), iv.data()) != 1) {
         EVP_CIPHER_CTX_free(ctx);
-        return std::unexpected(ErrorCode::CryptoError);
+        return std::unexpected(ErrorCode::EncryptionError);
     }
 
     std::vector<uint8_t> encrypted(32); // Max size for 16 bytes + padding
     int len = 0;
     if (EVP_EncryptUpdate(ctx, encrypted.data(), &len, titleKey.data(), titleKey.size()) != 1) {
         EVP_CIPHER_CTX_free(ctx);
-        return std::unexpected(ErrorCode::CryptoError);
+        return std::unexpected(ErrorCode::EncryptionError);
     }
 
     int totalLen = len;
     if (EVP_EncryptFinal_ex(ctx, encrypted.data() + len, &len) != 1) {
         EVP_CIPHER_CTX_free(ctx);
-        return std::unexpected(ErrorCode::CryptoError);
+        return std::unexpected(ErrorCode::EncryptionError);
     }
     totalLen += len;
 
     EVP_CIPHER_CTX_free(ctx);
-    encrypted.resize(16); // Title key is exactly 16 bytes when encrypted
+    encrypted.resize(TITLE_KEY_SIZE); // Title key is exactly 16 bytes when encrypted
     return encrypted;
 }
 
@@ -328,12 +333,12 @@ Result<void> WUPPackager::encryptContent(const std::filesystem::path &inputPath,
     // Encrypt with AES-128-CBC
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     if (ctx == nullptr) {
-        return std::unexpected(ErrorCode::CryptoError);
+        return std::unexpected(ErrorCode::EncryptionError);
     }
 
     if (EVP_EncryptInit_ex(ctx, EVP_aes_128_cbc(), nullptr, key.data(), iv.data()) != 1) {
         EVP_CIPHER_CTX_free(ctx);
-        return std::unexpected(ErrorCode::CryptoError);
+        return std::unexpected(ErrorCode::EncryptionError);
     }
 
     // Disable padding - pad manually to 16-byte boundary
@@ -346,13 +351,13 @@ Result<void> WUPPackager::encryptContent(const std::filesystem::path &inputPath,
     int len = 0;
     if (EVP_EncryptUpdate(ctx, encrypted.data(), &len, data.data(), data.size()) != 1) {
         EVP_CIPHER_CTX_free(ctx);
-        return std::unexpected(ErrorCode::CryptoError);
+        return std::unexpected(ErrorCode::EncryptionError);
     }
 
     int totalLen = len;
     if (EVP_EncryptFinal_ex(ctx, encrypted.data() + len, &len) != 1) {
         EVP_CIPHER_CTX_free(ctx);
-        return std::unexpected(ErrorCode::CryptoError);
+        return std::unexpected(ErrorCode::EncryptionError);
     }
     totalLen += len;
 
@@ -362,12 +367,12 @@ Result<void> WUPPackager::encryptContent(const std::filesystem::path &inputPath,
     // Write encrypted file
     std::ofstream outFile(outputPath, std::ios::binary);
     if (!outFile) {
-        return std::unexpected(ErrorCode::FileCreationFailed);
+        return std::unexpected(ErrorCode::IOError);
     }
 
     outFile.write(reinterpret_cast<const char *>(encrypted.data()), encrypted.size());
     if (!outFile) {
-        return std::unexpected(ErrorCode::WriteError);
+        return std::unexpected(ErrorCode::IOError);
     }
 
     return {};
@@ -415,7 +420,7 @@ Result<void> WUPPackager::createPackage(const PackageConfig &config) {
     auto tmdPath = config.outputDir / "title.tmd";
     std::ofstream tmdFile(tmdPath, std::ios::binary);
     if (!tmdFile) {
-        return std::unexpected(ErrorCode::FileCreationFailed);
+        return std::unexpected(ErrorCode::IOError);
     }
     tmdFile.write(reinterpret_cast<const char *>(tmdResult->data()), tmdResult->size());
 
@@ -423,7 +428,7 @@ Result<void> WUPPackager::createPackage(const PackageConfig &config) {
     auto ticketPath = config.outputDir / "title.tik";
     std::ofstream ticketFile(ticketPath, std::ios::binary);
     if (!ticketFile) {
-        return std::unexpected(ErrorCode::FileCreationFailed);
+        return std::unexpected(ErrorCode::IOError);
     }
     ticketFile.write(reinterpret_cast<const char *>(ticketResult->data()), ticketResult->size());
 
